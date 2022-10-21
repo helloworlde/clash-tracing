@@ -17,9 +17,9 @@ func envOrDefault(env string, def string) string {
 func main() {
 	clashHost := envOrDefault("CLASH_HOST", "localhost:9090")
 	clashToken := envOrDefault("CLASH_TOKEN", "")
-	vectorAddr := envOrDefault("VECTOR_ADDR", "localhost:9000")
+	lokiAddr := envOrDefault("LOKI_ADDR", "http://localhost:3100/loki/api/v1/push")
 
-	go handleReport(vectorAddr, clashHost, clashToken)
+	go handleReport(lokiAddr, clashHost, clashToken)
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)

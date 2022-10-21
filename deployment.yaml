@@ -30,12 +30,12 @@ spec:
       - name: clash-tracing
         image: ghcr.io/yangchuansheng/clash-tracing:latest
         env:
-        - name: CLASH_HOST
-          value: '192.168.100.254:9090'
-        - name: CLASH_TOKEN
-          value: '123456'
-        - name: VECTOR_ADDR
-          value: 'vector:9000'
+          - name: CLASH_HOST
+            value: 'localhost:9090'
+          - name: CLASH_TOKEN
+            value: '123456'
+          - name: LOKI_ADDR
+            value: 'http://localhost:3100/loki/api/v1/push'
         volumeMounts:
         - mountPath: /etc/localtime 
           name: time

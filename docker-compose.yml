@@ -23,9 +23,9 @@ services:
   reporter:
     build: .
     environment:
-      CLASH_HOST: '192.168.88.201:9090'
+      CLASH_HOST: 'localhost:9090'
       CLASH_TOKEN: ''
-      VECTOR_ADDR: 'vector:9000'
+      LOKI_ADDR: 'http://localhost:3100/loki/api/v1/push'
     container_name: reporter
     depends_on:
       - vector

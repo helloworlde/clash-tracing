@@ -7,17 +7,16 @@ import (
 	"time"
 
 	"github.com/avast/retry-go/v4"
+	"github.com/grafana/loki-client-go/loki"
 )
 
-func handleReport(addr, clashHost, clashToken string) {
-	dialer := net.Dialer{}
+func handleReport(lokiAddr, clashHost, clashToken string) {
+	var client *loki.Client
 	for {
 		var conn net.Conn
 		retry.Do(
 			func() (err error) {
-				ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-				defer cancel()
-				conn, err = dialer.DialContext(ctx, "tcp", addr)
+				client, err = InitClient(lokiAddr)
 				return
 			},
 			retry.Attempts(0),
@@ -27,20 +26,20 @@ func handleReport(addr, clashHost, clashToken string) {
 					max = 8
 				}
 				duration := time.Second * max * max
-				fmt.Printf("dial %s failed %d times: %v, wait %s\n", addr, n, err, duration.String())
+				fmt.Printf("dial %s failed %d times: %v, wait %s\n", lokiAddr, n, err, duration.String())
 				return duration
 			}),
 			retry.MaxDelay(time.Second*64),
 		)
 
-		fmt.Printf("dial %s success, send data to vector\n", addr)
-		handleTCPConn(conn, clashHost, clashToken)
+		fmt.Printf("Dial %s success, send data to LOKI\n", lokiAddr)
+		handleTCPConn(client, clashHost, clashToken)
 
 		conn.Close()
 	}
 }
 
-func handleTCPConn(conn net.Conn, clashHost string, clashToken string) {
+func handleTCPConn(client *loki.Client, clashHost string, clashToken string) {
 	trafficCh := make(chan []byte)
 	tracingCh := make(chan []byte)
 
@@ -56,7 +55,7 @@ Out:
 		case buf = <-trafficCh:
 		case buf = <-tracingCh:
 		}
-		if _, err := conn.Write(buf); err != nil {
+		if err := WriteToLoki(client, buf); err != nil {
 			break Out
 		}
 	}
