@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/avast/retry-go/v4 v4.0.3
+	github.com/gobeam/stringy v0.0.5
 	github.com/gorilla/websocket v1.4.2
 	github.com/grafana/loki-client-go v0.0.0-20210114103019-6057f29bbf5b
 	github.com/prometheus/client_golang v1.8.0

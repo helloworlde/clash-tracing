@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"net"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/avast/retry-go/v4"
 	"github.com/grafana/loki-client-go/loki"
@@ -13,7 +14,6 @@ import (
 func handleReport(lokiAddr, clashHost, clashToken string) {
 	var client *loki.Client
 	for {
-		var conn net.Conn
 		retry.Do(
 			func() (err error) {
 				client, err = InitClient(lokiAddr)
@@ -26,16 +26,14 @@ func handleReport(lokiAddr, clashHost, clashToken string) {
 					max = 8
 				}
 				duration := time.Second * max * max
-				fmt.Printf("dial %s failed %d times: %v, wait %s\n", lokiAddr, n, err, duration.String())
+				log.Errorf("第 %d 次连接 '%s' 失败，错误信息: '%v'，请检查地址或密码是否正确", n, lokiAddr, err.Error())
 				return duration
 			}),
 			retry.MaxDelay(time.Second*64),
 		)
 
-		fmt.Printf("Dial %s success, send data to LOKI\n", lokiAddr)
+		log.Infof("连接地址 %s 成功, 开始推送数据到 Loki\n", lokiAddr)
 		handleTCPConn(client, clashHost, clashToken)
-
-		conn.Close()
 	}
 }
 
@@ -47,7 +45,6 @@ func handleTCPConn(client *loki.Client, clashHost string, clashToken string) {
 
 	trafficDone := dialTrafficChan(ctx, clashHost, clashToken, trafficCh)
 	tracingDone := dialTracingChan(ctx, clashHost, clashToken, tracingCh)
-
 Out:
 	for {
 		var buf []byte
@@ -56,6 +53,7 @@ Out:
 		case buf = <-tracingCh:
 		}
 		if err := WriteToLoki(client, buf); err != nil {
+			log.Error("推送日志到 Loki 错误: ", err)
 			break Out
 		}
 	}

@@ -5,12 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"strings"
 	"time"
 
+	"github.com/gobeam/stringy"
 	"github.com/grafana/loki-client-go/loki"
 	"github.com/grafana/loki-client-go/pkg/urlutil"
 	"github.com/prometheus/common/model"
+	log "github.com/sirupsen/logrus"
 )
 
 func InitClient(lokiAddr string) (*loki.Client, error) {
@@ -38,7 +39,7 @@ func WriteToLoki(client *loki.Client, data []byte) error {
 	var tempObj = map[string]interface{}{}
 	err := json.Unmarshal(data, &tempObj)
 	if err != nil {
-		fmt.Println("反序列化日志错误：", err)
+		log.Error("反序列化日志错误：", err)
 		return err
 	}
 
@@ -46,16 +47,18 @@ func WriteToLoki(client *loki.Client, data []byte) error {
 	if tempObj["up"] != nil {
 		typeName = "traffic"
 	} else {
-		typeName = strings.ToLower(fmt.Sprintf("%s", tempObj["type"]))
+		messageType := stringy.New(fmt.Sprintf("%s", tempObj["type"]))
+		typeName = messageType.SnakeCase("?", "").ToLower()
 	}
+
 	labels := model.LabelSet{
 		"job":  model.LabelValue("clash"),
 		"type": model.LabelValue(typeName),
 	}
-
+	log.Debugf("类型: %s, 内容: %s", typeName, content)
 	err = client.Handle(labels, time.Now(), content)
 	if err != nil {
-		fmt.Println("发送日志失败：", err)
+		log.Error("发送日志失败：", err)
 		return err
 	}
 	return nil

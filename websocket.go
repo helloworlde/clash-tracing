@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/avast/retry-go/v4"
 	"github.com/gorilla/websocket"
 )
@@ -23,6 +25,7 @@ func (c *Conn) Close() error {
 }
 
 func dialWebsocketToChan(ctx context.Context, url string, ch chan []byte) chan struct{} {
+	log.Infof("开始连接 %s", url)
 	done := make(chan struct{}, 1)
 	go func() {
 		for {
@@ -34,7 +37,7 @@ func dialWebsocketToChan(ctx context.Context, url string, ch chan []byte) chan s
 				},
 				retry.Attempts(0),
 				retry.DelayType(func(n uint, err error, config *retry.Config) time.Duration {
-					println("dial websocket failed", url, n, err.Error())
+					log.Errorf("第 %d 次连接 '%s' 失败，错误信息: '%v'，请检查地址或密码是否正确", n, url, err.Error())
 					return retry.BackOffDelay(n, err, config)
 				}),
 				retry.RetryIf(func(e error) bool {
@@ -42,16 +45,17 @@ func dialWebsocketToChan(ctx context.Context, url string, ch chan []byte) chan s
 				}),
 				retry.MaxDelay(time.Second*64),
 			)
+			log.Infof("连接 %s 成功", url)
 		Out:
 			for {
 				select {
 				case <-ctx.Done():
 					done <- struct{}{}
-					conn.Close()
+					_ = conn.Close()
 					return
 				case buf, open := <-conn.Ch:
 					if !open {
-						conn.Close()
+						_ = conn.Close()
 						break Out
 					}
 					ch <- buf
