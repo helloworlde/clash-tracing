@@ -1,5 +1,5 @@
 #=================================================
-# https://github.com/yangchuansheng/clash-tracing
+# https://github.com/hellowoodes/clash-tracing
 # Description: Build and push clash-tracing Docker image
 # Lisence: MIT
 # Author: Carson Yang
@@ -26,7 +26,7 @@ env:
   GHCR_USER: ${{ github.actor }}
   GHCR_PASSWORD: ${{ secrets.GHCR_PASSWORD }}
   GHCR_REGISTRY: ghcr.io/${{ github.repository_owner }}
-  DOCKERHUB_USER: yangchuansheng
+  DOCKERHUB_USER: hellowoodes
   DOCKERHUB_REGISTRY: docker.io
   DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
 
@@ -69,5 +69,5 @@ jobs:
         context: ./
         push: true
         tags: |
-          yangchuansheng/clash-tracing:latest
+          hellowoodes/clash-reporter:latest
           ${{ env.GHCR_REGISTRY }}/clash-tracing:latest
