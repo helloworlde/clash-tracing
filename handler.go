@@ -40,17 +40,20 @@ func handleReport(lokiAddr, clashHost, clashToken string) {
 func handleTCPConn(client *loki.Client, clashHost string, clashToken string) {
 	trafficCh := make(chan []byte)
 	tracingCh := make(chan []byte)
+	connectionCh := make(chan []byte)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
 	trafficDone := dialTrafficChan(ctx, clashHost, clashToken, trafficCh)
 	tracingDone := dialTracingChan(ctx, clashHost, clashToken, tracingCh)
+	connectionDone := dialConnectionChan(ctx, clashHost, clashToken, connectionCh)
 Out:
 	for {
 		var buf []byte
 		select {
 		case buf = <-trafficCh:
 		case buf = <-tracingCh:
+		case buf = <-connectionCh:
 		}
 		if err := WriteToLoki(client, buf); err != nil {
 			log.Error("推送日志到 Loki 错误: ", err)
@@ -65,10 +68,13 @@ Out:
 		}
 		for range tracingCh {
 		}
+		for range connectionCh {
+		}
 	}()
 
 	<-trafficDone
 	<-tracingDone
+	<-connectionDone
 }
 
 func dialTrafficChan(ctx context.Context, clashHost string, clashToken string, ch chan []byte) chan struct{} {
@@ -88,6 +94,17 @@ func dialTracingChan(ctx context.Context, clashHost string, clashToken string, c
 		clashUrl = fmt.Sprintf("ws://%s/profile/tracing", clashHost)
 	} else {
 		clashUrl = fmt.Sprintf("ws://%s/profile/tracing?token=%s", clashHost, clashToken)
+	}
+
+	return dialWebsocketToChan(context.Background(), clashUrl, ch)
+}
+
+func dialConnectionChan(ctx context.Context, clashHost string, clashToken string, ch chan []byte) chan struct{} {
+	var clashUrl string
+	if clashToken == "" {
+		clashUrl = fmt.Sprintf("ws://%s/connections", clashHost)
+	} else {
+		clashUrl = fmt.Sprintf("ws://%s/connections?token=%s", clashHost, clashToken)
 	}
 
 	return dialWebsocketToChan(context.Background(), clashUrl, ch)
