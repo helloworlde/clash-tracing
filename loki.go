@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
-	"github.com/gobeam/stringy"
 	"github.com/grafana/loki-client-go/loki"
 	"github.com/grafana/loki-client-go/pkg/urlutil"
 	"github.com/prometheus/common/model"
@@ -46,9 +46,10 @@ func WriteToLoki(client *loki.Client, data []byte) error {
 	var typeName string
 	if tempObj["up"] != nil {
 		typeName = "traffic"
+	} else if tempObj["connections"] != nil {
+		typeName = "connection"
 	} else {
-		messageType := stringy.New(fmt.Sprintf("%s", tempObj["type"]))
-		typeName = messageType.SnakeCase("?", "").ToLower()
+		typeName = strings.ToLower(fmt.Sprintf("%s", tempObj["type"]))
 	}
 
 	labels := model.LabelSet{
