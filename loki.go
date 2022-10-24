@@ -51,6 +51,8 @@ func WriteToLoki(client *loki.Client, data []byte) error {
 	} else {
 		typeName = strings.ToLower(fmt.Sprintf("%s", tempObj["type"]))
 	}
+	// Add metrics
+	UpdateMetricsCounter(typeName)
 
 	labels := model.LabelSet{
 		"job":  model.LabelValue("clash"),
