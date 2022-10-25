@@ -34,8 +34,7 @@ func InitClient(lokiAddr string) (*loki.Client, error) {
 	return client, nil
 }
 
-func WriteToLoki(client *loki.Client, data []byte) error {
-	content := string(data)
+func HandleMetricsData(client *loki.Client, data []byte) error {
 	var tempObj = map[string]interface{}{}
 	err := json.Unmarshal(data, &tempObj)
 	if err != nil {
@@ -47,10 +46,25 @@ func WriteToLoki(client *loki.Client, data []byte) error {
 	if tempObj["up"] != nil {
 		typeName = "traffic"
 	} else if tempObj["connections"] != nil {
-		typeName = "connection"
+		// 将 connections 替换为 traffic_total
+		typeName = "traffic_total"
+		// connection 信息在 tracing 中已经有了，所以直接删掉，只保留连接数量信息
+		connections := tempObj["connections"]
+		connectionsSlices := connections.([]interface{})
+		tempObj["connectionSize"] = len(connectionsSlices)
+		delete(tempObj, "connections")
 	} else {
 		typeName = strings.ToLower(fmt.Sprintf("%s", tempObj["type"]))
 	}
+	contentBytes, err := json.Marshal(tempObj)
+	if err != nil {
+		log.Error("序列化处理后的数据失败: ", err)
+		return err
+	}
+	return pushToLoki(client, typeName, string(contentBytes))
+}
+
+func pushToLoki(client *loki.Client, typeName string, content string) error {
 	// Add metrics
 	UpdateMetricsCounter(typeName)
 
@@ -59,7 +73,7 @@ func WriteToLoki(client *loki.Client, data []byte) error {
 		"type": model.LabelValue(typeName),
 	}
 	log.Debugf("类型: %s, 内容: %s", typeName, content)
-	err = client.Handle(labels, time.Now(), content)
+	err := client.Handle(labels, time.Now(), content)
 	if err != nil {
 		log.Error("发送日志失败：", err)
 		return err

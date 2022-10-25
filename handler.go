@@ -55,7 +55,7 @@ Out:
 		case buf = <-tracingCh:
 		case buf = <-connectionCh:
 		}
-		if err := WriteToLoki(client, buf); err != nil {
+		if err := HandleMetricsData(client, buf); err != nil {
 			log.Error("推送日志到 Loki 错误: ", err)
 			break Out
 		}
