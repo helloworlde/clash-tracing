@@ -13,12 +13,10 @@ services:
     ports:
       - "3000:3000"
     container_name: grafana
-  reporter:
+  clash-tracing:
     build: .
     environment:
       CLASH_HOST: 'localhost:9090'
       CLASH_TOKEN: ''
       LOKI_ADDR: 'http://localhost:3100/loki/api/v1/push'
-    container_name: reporter
-    depends_on:
-      - vector
+    container_name: clash-tracing

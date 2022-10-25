@@ -26,7 +26,7 @@ func handleReport(lokiAddr, clashHost, clashToken string) {
 					max = 8
 				}
 				duration := time.Second * max * max
-				log.Errorf("第 %d 次连接 '%s' 失败，错误信息: '%v'，请检查地址或密码是否正确", n, lokiAddr, err.Error())
+				log.Errorf("第 %d 次连接 '%s' 失败，错误信息: '%v'，请检查地址或密码是否正确或者 Clash 是否开启 tracing", n, lokiAddr, err.Error())
 				return duration
 			}),
 			retry.MaxDelay(time.Second*64),

@@ -28,7 +28,7 @@ spec:
           path: /etc/localtime
       containers:
       - name: clash-tracing
-        image: ghcr.io/yangchuansheng/clash-tracing:latest
+        image: ghcr.io/hellowoodes/clash-tracing:latest
         env:
           - name: CLASH_HOST
             value: 'localhost:9090'

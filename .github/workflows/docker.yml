@@ -69,5 +69,5 @@ jobs:
         context: ./
         push: true
         tags: |
-          hellowoodes/clash-reporter:latest
+          hellowoodes/clash-tracing:latest
           ${{ env.GHCR_REGISTRY }}/clash-tracing:latest
