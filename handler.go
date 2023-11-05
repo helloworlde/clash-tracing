@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -55,9 +56,21 @@ Out:
 		case buf = <-tracingCh:
 		case buf = <-connectionCh:
 		}
-		if err := HandleMetricsData(client, buf); err != nil {
-			log.Error("推送日志到 Loki 错误: ", err)
+		typeName, content, err := HandleMetricsData(buf)
+
+		if err != nil {
+			log.Error("解析数据错误: ", err)
 			break Out
+		}
+		//err = PushToLoki(client, typeName, content)
+		//if err != nil {
+		//	log.Error("推送日志到 Loki 错误: ", err)
+		//	break Out
+		//}
+
+		err = HandleMetricsDataByClickhouse(typeName, content)
+		if err != nil {
+			log.Error("推送日志到 Clickhouse 错误: ", err)
 		}
 	}
 
@@ -108,4 +121,34 @@ func dialConnectionChan(ctx context.Context, clashHost string, clashToken string
 	}
 
 	return dialWebsocketToChan(context.Background(), clashUrl, ch)
+}
+
+func HandleMetricsData(data []byte) (string, []byte, error) {
+	var tempObj = map[string]interface{}{}
+	err := json.Unmarshal(data, &tempObj)
+	if err != nil {
+		log.Error("反序列化日志错误：", err)
+		return "", nil, err
+	}
+
+	var typeName string
+	if tempObj["up"] != nil {
+		typeName = "Traffic"
+	} else if tempObj["connections"] != nil {
+		// 将 connections 替换为 traffic_total
+		typeName = "TrafficTotal"
+		// connection 信息在 tracing 中已经有了，所以直接删掉，只保留连接数量信息
+		connections := tempObj["connections"]
+		connectionsSlices := connections.([]interface{})
+		tempObj["connectionSize"] = len(connectionsSlices)
+		delete(tempObj, "connections")
+	} else {
+		typeName = fmt.Sprintf("%s", tempObj["type"])
+	}
+	contentBytes, err := json.Marshal(tempObj)
+	if err != nil {
+		log.Error("序列化处理后的数据失败: ", err)
+		return "", nil, err
+	}
+	return typeName, contentBytes, nil
 }
