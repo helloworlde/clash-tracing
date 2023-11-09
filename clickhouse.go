@@ -7,16 +7,17 @@ import (
 	"errors"
 	"github.com/ClickHouse/clickhouse-go/v2"
 	log "github.com/sirupsen/logrus"
+	"os"
 	"time"
 )
 
 var client *sql.DB
 
 func init() {
-	clickhouseAddr := "192.168.2.4:9004"
-	database := "clash"
-	username := "default"
-	password := "password"
+	clickhouseAddr := os.Getenv("CLICKHOUSE_ADDR")
+	database := os.Getenv("CLICKHOUSE_DATABASE")
+	username := os.Getenv("CLICKHOUSE_USERNAME")
+	password := os.Getenv("CLICKHOUSE_PASSWORD")
 
 	clickhouseClient, err := InitClickhouse(clickhouseAddr, database, username, password)
 	if err != nil {

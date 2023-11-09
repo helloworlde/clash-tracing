@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS dns_request
     name     String,
     qType    String,
     source   String,
-    type     String
+    type     String,
+    addTime  DateTime DEFAULT now()
 ) ENGINE = MergeTree()
       ORDER BY (name, qType, source, answer);
