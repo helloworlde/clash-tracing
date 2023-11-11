@@ -38,6 +38,10 @@ services:
       CLASH_HOST: 'host.docker.internal:9090'
       CLASH_TOKEN: '123456'
       LOKI_ADDR: 'http://loki:3100/loki/api/v1/push'
+#      CLICKHOUSE_ADDR: 192.168.2.4:9004
+#      CLICKHOUSE_PASSWORD: password
+#      CLICKHOUSE_USERNAME: default
+#      CLICKHOUSE_DATABASE: clash
 ```
 
 3. 导入 Grafana 面板
