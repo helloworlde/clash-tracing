@@ -1,23 +1,25 @@
-create database if not exists clash;
+CREATE DATABASE IF NOT EXISTS clash;
 
-CREATE TABLE IF NOT EXISTS traffic_total
+CREATE TABLE IF NOT EXISTS clash.traffic_total
 (
     connectionSize Int32,
     downloadTotal  Int64,
     uploadTotal    Int64,
     addTime        DateTime DEFAULT now()
 ) ENGINE = MergeTree()
-      ORDER BY addTime;
+      ORDER BY addTime
+      TTL addTime + INTERVAL 30 DAY;
 
-CREATE TABLE IF NOT EXISTS traffic
+CREATE TABLE IF NOT EXISTS clash.traffic
 (
     down    Int64,
     up      Int64,
     addTime DateTime DEFAULT now()
 ) ENGINE = MergeTree()
-      ORDER BY addTime;
+      ORDER BY addTime
+      TTL addTime + INTERVAL 30 DAY;
 
-CREATE TABLE IF NOT EXISTS proxy_dial
+CREATE TABLE IF NOT EXISTS clash.proxy_dial
 (
     type     String,
     address  String,
@@ -28,9 +30,10 @@ CREATE TABLE IF NOT EXISTS proxy_dial
     proxy    String,
     addTime  DateTime DEFAULT now()
 ) ENGINE = MergeTree()
-      ORDER BY (address, host, proxy);
+      ORDER BY (address, host, proxy)
+      TTL addTime + INTERVAL 30 DAY;
 
-CREATE TABLE IF NOT EXISTS rule_match
+CREATE TABLE IF NOT EXISTS clash.rule_match
 (
     type     String,
     duration Int64,
@@ -41,9 +44,10 @@ CREATE TABLE IF NOT EXISTS rule_match
     rule     String,
     addTime  DateTime DEFAULT now()
 ) ENGINE = MergeTree()
-      ORDER BY (proxy, rule);
+      ORDER BY (proxy, rule)
+      TTL addTime + INTERVAL 30 DAY;
 
-CREATE TABLE IF NOT EXISTS dns_request
+CREATE TABLE IF NOT EXISTS clash.dns_request
 (
     answer   Array(String),
     dnsType  String,
